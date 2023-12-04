@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Notes App</title>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.js"></script>
+
+    <script type="text/babel">
+        const rootHandle = document.getElementById('root')
+
+        const { useState, useEffect } = React
+
+        function NoteForm(props) {
+            const { addNote, notes } = props
+            const [name, setName] = useState('')
+
+
+            useEffect(() => {
+                setName('')
+            }, [notes])
+
+            const handleSubmit = (e) => {
+                e.preventDefault()
+                const obj = {
+                    id: Number(new Date()),
+                    name: name,
+                    createdAt: new Date()
+                }
+                addNote(obj)
+            }
+
+            return (
+                <div>
+                    <form onSubmit={handleSubmit}>
+                        <label> enter note : </label>
+                        <input type="text" value={name} onChange={(e) => { setName(e.target.value) }} />
+                        <input type="submit" value="add note" />
+                    </form>
+                </div>
+            )
+        }
+
+        function EditNoteForm(props) {
+            const { id, createdAt, editNote } = props
+            const [name, setName] = useState(props.name)
+
+
+            const handleSubmit = (e) => {
+                e.preventDefault()
+                const obj = {
+                    id: id,
+                    name: name,
+                    createdAt: createdAt
+                }
+                editNote(id, obj)
+            }
+
+            return (
+                <div>
+                    <form onSubmit={handleSubmit}>
+                        <label> enter new note : </label>
+                        <input type="text" value={name} onChange={(e) => { setName(e.target.value) }} />
+                        <input type="submit" value=" update note" />
+                    </form>
+                </div>
+            )
+        }
+
+
+
+
+        function NoteList(props) {
+            const { notes, handleDelete, editNote } = props
+
+            return (
+                <div>
+
+                    {notes.map((ele) => {
+                        return <NoteItem key={ele.id} {...ele} handleDelete={handleDelete} editNote={editNote} />
+                    })}
+                </div>
+            )
+        }
+
+        function NoteItem(props) {
+            const { id, name, createdAt, handleDelete, editNote } = props
+            const [edit, setEdit] = useState(false)
+
+            const handleRemove = (e) => {
+                const confirm = window.confirm("arevu sure?")
+                if (confirm) {
+                    handleDelete(id)
+                }
+
+            }
+
+            const handleEdit = (e) => {
+                setEdit(true)
+            }
+
+            const handleCancel = (e) => {
+                setEdit(false)
+            }
+
+
+
+            return (
+                <div>
+
+                    {edit ?
+                        <div>
+                            <EditNoteForm
+                                id={id}
+                                name={name}
+                                createdAt={createdAt}
+                                editNote={editNote}
+                            />
+                            <button onClick={handleCancel}> cancel </button>
+                        </div>
+                        :
+                        <div>
+                            <p> {name} </p>
+                            <p> created At {new Date(createdAt).toLocaleString()} </p>
+                            <button class="button button" onClick={handleEdit}> Edit</button>
+                            <button class="button button3" onClick={handleRemove}> delete </button>
+                            <hr />
+
+                        </div>
+
+                    }
+
+                </div>
+            )
+        }
+
+        function App(props) {
+            const [notes, setNotes] = useState([])
+            console.log(notes);
+
+            useEffect(() => {
+
+            }, [])
+            //when the notes are added we update the local storage or whenecver the notes chnage
+            useEffect(() => {
+                localStorage.setItem('notes', JSON.stringify(notes))
+            }, [notes])
+
+
+            useEffect(() => {
+                // const notes = JSON.parse(localStorage.getItem('notes') )|| []
+                // setNotes(notes)
+                const data = localStorage.getItem('notes')
+                if (data) {
+                    setNotes(JSON.parse(data))
+                } else {
+                    setNotes([])
+                }
+            }, [])
+
+
+            const addNote = (obj) => {
+                setNotes([...notes, obj])
+            }
+
+            const handleDelete = (id) => {
+                const result = notes.filter((ele) => {
+                    return ele.id !== id
+                })
+                setNotes(result)
+            }
+            const editNote = (id, obj) => {
+                const result = notes.map((ele) => {
+                    if (ele.id === id) {
+                        return { ...ele, ...obj }
+                    } else {
+                        return { ...ele }
+                    }
+                })
+                setNotes(result)
+            }
+
+
+            return (
+                <div>
+                    <h1 style={{ color: "red" }}> Notes App </h1>
+                    <h2> Listing notes - {notes.length} </h2>
+                    <NoteForm addNote={addNote} notes={notes} />
+                    {notes.length > 0 ? <NoteList notes={notes} handleDelete={handleDelete} editNote={editNote} /> : <p style={{ color: "red" }}> <b> no notes found !!!  add your first note </b>    </p>}
+
+                </div>
+            )
+        }
+
+        ReactDOM.render(<App />, rootHandle)
+
+    </script>
+</body>
+
+</html>
